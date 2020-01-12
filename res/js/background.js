@@ -587,11 +587,10 @@
                            var keyValue = headerMap[key];
                            return keyValue === true || (addHeaders.push({name: key, value: keyValue}), false);
                          });
-
         removeList.length && removeList.forEach(function(key){
           headers.some(function(header, i){
             // TODO 多个同名的response header, 每次删除的都是最后一个
-            return header.name === key && headers.splice(i, 1);
+            return header.name.toLowerCase() === key.toLowerCase() && headers.splice(i, 1);
           });
         });
         [].push.apply(headers, addHeaders);
