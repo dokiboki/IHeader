@@ -46,6 +46,7 @@
     .container {
       box-sizing: border-box;
       padding: 90px 0 60px;
+      overflow: scroll;
     }
     .title {
       font-size: 18px;
@@ -119,6 +120,12 @@
         <p>
           <input type="checkbox" id="cors">
           <label for="cors">Tab开启监听时, 默认为其所有请求添加CORS响应头</label>
+        </p>
+      </div>
+      <div class="settings">
+        <p>
+          <input type="checkbox" id="global_iframe_breakout">
+          <label for="global_iframe_breakout">all listener: 默认为所有请求去除X-Frame-Options响应头</label>
         </p>
       </div>
     </div>

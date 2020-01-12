@@ -2,7 +2,8 @@
   var UNINIT   = 0, // 扩展未初始化
       INITED   = 1, // 扩展已初始化，但未激活
       ACTIVE   = 2, // 扩展已激活
-      autoCORS = localStorage.getItem('defaultCORS') || true,
+      autoCORS = localStorage.getItem('defaultCORS') || false,
+      gIframeBreakout = localStorage.getItem('gIframeBreakout') || true,
       types    = JSON.parse(localStorage.getItem('types')), // 请求类型
       allTypes = [
         'main_frame',
@@ -424,9 +425,47 @@
     localStorage.setItem('defaultCORS', bool);
   };
 
+  window.setDefaultIFrameBreakout = function(bool){
+    gIframeBreakout = bool;
+    localStorage.setItem('gIframeBreakout', bool);
+    if(bool&&bool!='false'){
+      setModifyHeadersListener('responseHeaders',"all", {
+        "*": {
+          "x-frame-options": true
+        }
+      })
+    }else {
+      var listeners =ListenerControler('all').listeners;
+      emptyChangelist(listeners, 'onHeadersReceived', '*');
+      syncStore4Listener(listeners)
+    }
+  };
+
+  /* clear changelist */
+  function emptyChangelist(listeners, name, url){
+    var listener = listeners[name];
+    if(listener && listener.changelist && listener.changelist[url]){
+      delete listener.changelist[url];
+
+      /* remove changelist & headers listener */
+      if(isEmptyObject(listener.changelist)){
+        listener.remove();
+        delete listeners[name];
+      }
+    }
+  }
+
   /* get default CORS rules */
   window.getDefaultCORS = function(){
+    if(typeof autoCORS == 'string')
+      return autoCORS == 'true';
     return autoCORS;
+  };
+
+  window.getDefaultIframeBreakout = function(){
+    if(typeof gIframeBreakout == 'string')
+      return gIframeBreakout == 'true';
+    return gIframeBreakout;
   };
 
   /* 获取该Tab页的所有请求消息 */
@@ -470,6 +509,12 @@
       o.type = listener.extraInfoSpec[1];
       list.push(o);
     });
+    if(!list.find(function (item) {
+      return item.changelist.hasOwnProperty("*");
+    })){
+      gIframeBreakout = false;
+      localStorage.setItem('gIframeBreakout', "false");
+    }
     localStorage.setItem('globalListener', JSON.stringify(list));
   };
 
@@ -531,7 +576,7 @@
           obj        = {},
           hasRule    = changelist && (url in changelist || Object.keys(changelist).some(
                          function(v) {
-                           return ~url.indexOf(v) && (url = v, true);
+                           return (~url.indexOf(v) || v=='*') && (url = v, true);
                        }));
 
       if(hasRule){
@@ -601,7 +646,26 @@
     }
   }
   // 重启全局监听器
-  JSON.parse(localStorage.getItem('globalListener') || '[]').forEach(function(listener){
+  var globalListenerArr = JSON.parse(localStorage.getItem('globalListener') || '[]');
+  var findIndex = globalListenerArr.findIndex(function (item) {
+    return item.changelist.hasOwnProperty("*");
+  });
+  if(gIframeBreakout){
+    if(findIndex<0){
+      globalListenerArr.push({
+        "changelist": {
+          "*": {
+            "x-frame-options": true
+          }
+        },
+        "type": "responseHeaders"
+      });
+    }
+  }else{
+    globalListenerArr.splice(findIndex,1);
+  }
+  localStorage.setItem('globalListener', JSON.stringify(globalListenerArr));
+  globalListenerArr.forEach(function(listener){
     window.setModifyHeadersListener(listener.type, 'all', listener.changelist, true);
   });
 })();

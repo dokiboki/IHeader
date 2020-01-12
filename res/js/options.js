@@ -4,7 +4,8 @@
       allTypes    = bg.getAllTypes(),
       box         = document.getElementById('settings'),
       reloadBtn   = document.getElementById('reload'),
-      corsBtn     = document.getElementById('cors');
+      corsBtn     = document.getElementById('cors'),
+      gIframeBreakoutBtn     = document.getElementById('global_iframe_breakout');
 
   allTypes.forEach(function(type){
     createOptions(type);
@@ -19,6 +20,10 @@
   bg.getDefaultCORS() && corsBtn.setAttribute('checked', 'true');
   corsBtn.addEventListener('click', function(){
     bg.setDefaultCORS(this.checked);
+  });
+  bg.getDefaultIframeBreakout() && gIframeBreakoutBtn.setAttribute('checked', 'true');
+  gIframeBreakoutBtn.addEventListener('click', function () {
+    bg.setDefaultIFrameBreakout(this.checked);
   });
 
   function switchBtnStatus(bool){
